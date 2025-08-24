@@ -8,7 +8,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 from for_SQL import create_table, update_quiz_index, get_quiz_index
 from for_keyboard import generate_options_keyboard
 from for_quiz import *
-
+                         
 # Включаем логирование, чтобы не пропустить важные сообщения
 logging.basicConfig(level=logging.INFO)
 
