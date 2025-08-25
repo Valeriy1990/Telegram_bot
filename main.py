@@ -25,6 +25,8 @@ bot = Bot(token=API_TOKEN)
 # Диспетчер
 dp = Dispatcher()
 
+result = list()
+
 # Хэндлер на команду /start
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
@@ -45,6 +47,11 @@ async def get_last_stats(message: types.Message):
     for quiz in stat:
         await message.answer(f"Игроком под номером {quiz[1]} всего сыграно {quiz[0]} игр\n Сумма неверных ответов: {quiz[2]}\n Сумма верных ответов: {quiz[3]}")
 
+async def save_answer(message: types.Message, answer, lst: list):
+    lst.append(answer)
+    # Получаем результат из таблицы результатов
+    return await lst
+
 # Хэндлер на команды /quiz
 @dp.message(F.text=="Начать игру")
 @dp.message(Command("quiz"))
@@ -61,6 +68,8 @@ async def new_quiz(message):
 
     # Создаём новую запись в таблице результатов
     await start_stats(user_id)
+
+    result = list()
 
     # сбрасываем значение текущего индекса вопроса квиза в 0
     current_question_index = 0
