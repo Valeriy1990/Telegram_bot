@@ -35,6 +35,16 @@ async def cmd_start(message: types.Message):
     # Прикрепляем кнопки к сообщению
     await message.answer("Добро пожаловать в квиз!", reply_markup=builder.as_markup(resize_keyboard=True))
     
+# Хэндлер на команду /last_stats
+@dp.message(Command("last_stats"))
+async def get_last_stats(message: types.Message):
+    # Получаем id последнего значения таблицы результатов
+    id_quiz = await get_stats_index()
+    # Получаем результат из таблицы результатов
+    stat = await get_stats(id_quiz)
+    for quiz in stat:
+        await message.answer(f"Игроком под номером {quiz[1]} всего сыграно {quiz[0]} игр\n Сумма неверных ответов: {quiz[2]}\n Сумма верных ответов: {quiz[3]}")
+
 # Хэндлер на команды /quiz
 @dp.message(F.text=="Начать игру")
 @dp.message(Command("quiz"))
@@ -106,7 +116,7 @@ async def right_answer(callback: types.CallbackQuery):
     else:
         stat = await get_stats(id_quiz)
         # Уведомление об окончании квиза
-        await callback.message.answer(f"Это был последний вопрос. Квиз завершен! {stat}")
+        await callback.message.answer(f"Это был последний вопрос. Квиз завершен!\nНеверных ответов: {stat[2]}\nВерных ответов: {stat[3]}")
 
 @dp.callback_query(F.data == "wrong_answer")
 async def wrong_answer(callback: types.CallbackQuery):
@@ -142,7 +152,7 @@ async def wrong_answer(callback: types.CallbackQuery):
     else:
         stat = await get_stats(id_quiz)
         # Уведомление об окончании квиза
-        await callback.message.answer(f"Это был последний вопрос. Квиз завершен! {stat}")
+        await callback.message.answer(f"Это был последний вопрос. Квиз завершен!\nНеверных ответов: {stat[2]}\nВерных ответов: {stat[3]}")
 
 # Запуск процесса поллинга новых апдейтов
 async def main():
