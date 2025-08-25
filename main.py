@@ -3,17 +3,22 @@ import logging
 from aiogram import F
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters.command import Command
-from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
+from aiogram.utils.keyboard import ReplyKeyboardBuilder
+from environs import Env
 
-from for_SQL import create_table, update_quiz_index, get_quiz_index
+from for_SQL import create_table, update_quiz_index, get_quiz_index, start_stats, set_stats, get_stats_index, get_stats
 from for_keyboard import generate_options_keyboard
 from for_quiz import *
                          
 # Включаем логирование, чтобы не пропустить важные сообщения
 logging.basicConfig(level=logging.INFO)
 
-# Замените "YOUR_BOT_TOKEN" на токен, который вы получили от BotFather
-API_TOKEN = '8386131040:AAHdL0FIAmW5MXzk-XGNkCY4VNh61DxDee8'
+ # Создаем экземпляр класса Env
+env: Env = Env()
+# Добавляем в переменные окружения данные, прочитанные из файла .env 
+env.read_env(r'C:\Users\vbekr\Desktop\Python\Telegram_bot\my_env.env')
+
+API_TOKEN = env('API_TOKEN')
 
 # Объект бота
 bot = Bot(token=API_TOKEN)
@@ -36,12 +41,17 @@ async def cmd_start(message: types.Message):
 async def cmd_quiz(message: types.Message):
     # Отправляем новое сообщение без кнопок
     await message.answer(f"Давайте начнем квиз!")
+
     # Запускаем новый квиз
     await new_quiz(message)
     
 async def new_quiz(message):
     # получаем id пользователя, отправившего сообщение
     user_id = message.from_user.id
+
+    # Создаём новую запись в таблице результатов
+    await start_stats(user_id)
+
     # сбрасываем значение текущего индекса вопроса квиза в 0
     current_question_index = 0
     await update_quiz_index(user_id, current_question_index)
@@ -62,7 +72,7 @@ async def get_question(message, user_id):
     # В качестве аргументов передаем варианты ответов и значение правильного ответа (не индекс!)
     kb = generate_options_keyboard(opts, opts[correct_index])
     # Отправляем в чат сообщение с вопросом, прикрепляем сгенерированные кнопки
-    await message.answer(f"{quiz_data[current_question_index]['question']}", reply_markup=kb)
+    await message.answer(f"{quiz_data[current_question_index]['question']}", reply_markup=kb)   
 
 @dp.callback_query(F.data == "right_answer")
 async def right_answer(callback: types.CallbackQuery):
@@ -76,8 +86,14 @@ async def right_answer(callback: types.CallbackQuery):
     # Получение текущего вопроса для данного пользователя
     current_question_index = await get_quiz_index(callback.from_user.id)
 
+    # Получаем id последнего значения таблицы результатов
+    id_quiz = await get_stats_index()
+
     # Отправляем в чат сообщение, что ответ верный
     await callback.message.answer("Верно!")
+
+    # Записываем положительный результат в таблицу результатов
+    await set_stats(id_quiz, res = True)
 
     # Обновление номера текущего вопроса в базе данных
     current_question_index += 1
@@ -88,8 +104,9 @@ async def right_answer(callback: types.CallbackQuery):
         # Следующий вопрос
         await get_question(callback.message, callback.from_user.id)
     else:
+        stat = await get_stats(id_quiz)
         # Уведомление об окончании квиза
-        await callback.message.answer("Это был последний вопрос. Квиз завершен!")
+        await callback.message.answer(f"Это был последний вопрос. Квиз завершен! {stat}")
 
 @dp.callback_query(F.data == "wrong_answer")
 async def wrong_answer(callback: types.CallbackQuery):
@@ -108,6 +125,12 @@ async def wrong_answer(callback: types.CallbackQuery):
     # Отправляем в чат сообщение об ошибке с указанием верного ответа
     await callback.message.answer(f"Неправильно. Правильный ответ: {quiz_data[current_question_index]['options'][correct_option]}")
 
+    # Получаем id последнего значения таблицы результатов
+    id_quiz = await get_stats_index()
+
+    # Записываем отрицательный результат в таблицу результатов
+    await set_stats(id_quiz, res = False)
+
     # Обновление номера текущего вопроса в базе данных
     current_question_index += 1
     await update_quiz_index(callback.from_user.id, current_question_index)
@@ -117,8 +140,9 @@ async def wrong_answer(callback: types.CallbackQuery):
         # Следующий вопрос
         await get_question(callback.message, callback.from_user.id)
     else:
+        stat = await get_stats(id_quiz)
         # Уведомление об окончании квиза
-        await callback.message.answer("Это был последний вопрос. Квиз завершен!")
+        await callback.message.answer(f"Это был последний вопрос. Квиз завершен! {stat}")
 
 # Запуск процесса поллинга новых апдейтов
 async def main():

@@ -44,5 +44,5 @@ quiz_data = [
         'question': 'Какая библиотека используется для работы с многомерными массивами в Python?',
         'options': ['Pandas', 'Matplotlib', 'NumPy', 'SciPy'],
         'correct_option': 2
-    },
+    }
 ]
