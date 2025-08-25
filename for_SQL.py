@@ -13,20 +13,12 @@ async def create_table():
         await db.execute('''CREATE TABLE IF NOT EXISTS stats (id INTEGER PRIMARY KEY, user_id INTEGER, wrong_count INTEGER, right_count INTEGER)''')
         # Сохраняем изменения
         await db.commit()
-
-    # async with aiosqlite.connect('res_answer.db') as db:
-    #     # Создаём таблицу результатов
-    #     await db.execute('''CREATE TABLE IF NOT EXISTS res_answer (id INTEGER PRIMARY KEY, id_quiz INTEGER, res_answer TEXT)''')
-    #     # Сохраняем изменения
-    #     await db.commit()
-
-# async def save_answer(id_quiz):
-#      # Подключаемся к базе данных
-#      async with aiosqlite.connect('stats.db') as db:
-#         # Вставляем новую запись
-#         await db.execute('INSERT OR REPLACE INTO stats (id_quiz, wrong_count, right_count) VALUES (?, ?, ?)', (id_quiz, 0, 0))
-#         # Сохраняем изменения
-#         await db.commit()
+        
+    async with aiosqlite.connect('ansewr.db') as db:
+        # Создаём таблицу результатов
+        await db.execute('''CREATE TABLE IF NOT EXISTS ansewr (id INTEGER PRIMARY KEY, user_id INTEGER, quiz TEXT, ansewr TEXT)''')
+        # Сохраняем изменения
+        await db.commit()
 
 async def update_quiz_index(user_id, index):
     # Создаем соединение с базой данных (если она не существует, она будет создана)
@@ -36,6 +28,26 @@ async def update_quiz_index(user_id, index):
         # Сохраняем изменения
         await db.commit()
         
+async def update_ansewr(user_id, quiz, ansewr):
+    # Создаем соединение с базой данных (если она не существует, она будет создана)
+    async with aiosqlite.connect('ansewr.db') as db:
+        # Вставляем новую запись или заменяем ее, если с данным user_id уже существует
+        await db.execute('INSERT OR REPLACE INTO ansewr (user_id, quiz, ansewr) VALUES (?, ?, ?)', (user_id, quiz, ansewr))
+        # Сохраняем изменения
+        await db.commit()
+        
+async def get_ansewr():
+     # Подключаемся к базе данных
+     async with aiosqlite.connect('ansewr.db') as db:
+        # Получаем запись для заданного пользователя
+        async with db.execute('SELECT ansewr FROM ansewr') as cursor:
+            # Возвращаем результат
+            results = await cursor.fetchone()
+            if results is not None:
+                return results
+            else:
+                return 0
+            
 async def get_quiz_index(user_id):
      # Подключаемся к базе данных
      async with aiosqlite.connect('quiz_bot.db') as db:

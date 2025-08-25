@@ -16,6 +16,7 @@ def generate_options_keyboard(answer_options, right_answer):
             callback_data="right_answer" if option == right_answer else "wrong_answer")
         )
 
+    
     # Выводим по одной кнопке в столбик
-    builder.adjust(1)
+    builder.adjust(1) 
     return builder.as_markup()
