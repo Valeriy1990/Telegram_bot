@@ -6,9 +6,10 @@ from aiogram.filters.command import Command
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 from environs import Env
 
-from for_SQL import create_table, update_quiz_index, get_quiz_index, start_stats, set_stats, get_stats_index, get_stats, update_ansewr, get_ansewr
+from for_SQL import create_table, update_quiz_index, get_quiz_index, start_stats, set_stats, get_stats_index, get_stats
 from for_keyboard import generate_options_keyboard
 from for_quiz import *
+from for_queue import *
                          
 # Включаем логирование, чтобы не пропустить важные сообщения
 logging.basicConfig(level=logging.INFO)
@@ -16,7 +17,7 @@ logging.basicConfig(level=logging.INFO)
  # Создаем экземпляр класса Env
 env: Env = Env()
 # Добавляем в переменные окружения данные, прочитанные из файла .env 
-env.read_env(r'C:\Users\Валерий\Desktop\python\Telegram_bot\my_env.env')
+env.read_env(r'C:\Users\vbekr\Desktop\Python\Telegram_bot\my_env.env')
 
 API_TOKEN = env('API_TOKEN')
 
@@ -24,6 +25,7 @@ API_TOKEN = env('API_TOKEN')
 bot = Bot(token=API_TOKEN)
 # Диспетчер
 dp = Dispatcher()
+
 
 # Хэндлер на команду /start
 @dp.message(Command("start"))
@@ -61,17 +63,12 @@ async def new_quiz(message):
 
     # Создаём новую запись в таблице результатов
     await start_stats(user_id)
-    
     # сбрасываем значение текущего индекса вопроса квиза в 0
     current_question_index = 0
     await update_quiz_index(user_id, current_question_index)
 
     # запрашиваем новый вопрос для квиза
     await get_question(message, user_id)
-    
-# async def answer_list(lst, answer = ()):
-#     lst.append(answer)
-#     return lst
 
 async def get_question(message, user_id):
 
@@ -96,8 +93,10 @@ async def right_answer(callback: types.CallbackQuery):
         message_id=callback.message.message_id,
         reply_markup=None
     )
-    
-    await update_ansewr(callback.from_user.id, callback.message.text, callback.message.reply_markup.inline_keyboard[0][0].text)
+
+    item = callback.from_user.id, callback.message.text, callback.message.reply_markup.inline_keyboard[0][0].text
+
+    await add_item(item)
 
     # Получение текущего вопроса для данного пользователя
     current_question_index = await get_quiz_index(callback.from_user.id)
@@ -121,10 +120,12 @@ async def right_answer(callback: types.CallbackQuery):
         await get_question(callback.message, callback.from_user.id)
     else:
         stat = await get_stats(id_quiz)
-        res_ = get_ansewr()
         # Уведомление об окончании квиза
         await callback.message.answer(f"Это был последний вопрос. Квиз завершен!\nНеверных ответов: {stat[-1][2]}\nВерных ответов: {stat[-1][3]}")
-        await callback.message.answer(f"{res_}")
+        # res_answere = flush_buffer(callback.message)
+        # await callback.message.answer(f"Вопрос: {res_answere[1]}\nВаш ответ: {res_answere[2]}")
+
+        await flush_buffer(callback.message)
 
 @dp.callback_query(F.data == "wrong_answer")
 async def wrong_answer(callback: types.CallbackQuery):
@@ -135,10 +136,10 @@ async def wrong_answer(callback: types.CallbackQuery):
         reply_markup=None
     )
 
-    await update_ansewr(callback.from_user.id, callback.message.text, callback.message.reply_markup.inline_keyboard[0][0].text)
-    
-    print(callback.message.text)
+    item = callback.from_user.id, callback.message.text, callback.message.reply_markup.inline_keyboard[0][0].text
 
+    await add_item(item)
+    
     # Получение текущего вопроса для данного пользователя
     current_question_index = await get_quiz_index(callback.from_user.id)
 
@@ -163,14 +164,18 @@ async def wrong_answer(callback: types.CallbackQuery):
         await get_question(callback.message, callback.from_user.id)
     else:
         stat = await get_stats(id_quiz)
-        res_ = get_ansewr()
+
         # Уведомление об окончании квиза
         await callback.message.answer(f"Это был последний вопрос. Квиз завершен!\nНеверных ответов: {stat[-1][2]}\nВерных ответов: {stat[-1][3]}")
-        await callback.message.answer(f"{res_}")
+        # res_answere = await consumer(answers)
+        # # await callback.message.answer(f"Вопрос: {res_answere[1]}\nВаш ответ: {res_answere[2]}")
+        # await callback.message.answer(f"{type(res_answere)}")    
+
+        await flush_buffer(callback.message)
 
 # Запуск процесса поллинга новых апдейтов
 async def main():
-    lst = list()
+
     # Запускаем создание таблицы базы данных
     await create_table()
     await dp.start_polling(bot)
