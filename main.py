@@ -95,7 +95,7 @@ async def right_answer(callback: types.CallbackQuery):
     )
 
     item = callback.from_user.id, callback.message.text, callback.message.reply_markup.inline_keyboard[0][0].text
-
+    # Записываем ответ
     await add_item(item)
 
     # Получение текущего вопроса для данного пользователя
@@ -122,9 +122,7 @@ async def right_answer(callback: types.CallbackQuery):
         stat = await get_stats(id_quiz)
         # Уведомление об окончании квиза
         await callback.message.answer(f"Это был последний вопрос. Квиз завершен!\nНеверных ответов: {stat[-1][2]}\nВерных ответов: {stat[-1][3]}")
-        # res_answere = flush_buffer(callback.message)
-        # await callback.message.answer(f"Вопрос: {res_answere[1]}\nВаш ответ: {res_answere[2]}")
-
+        # Возвращаем все ответы
         await flush_buffer(callback.message)
 
 @dp.callback_query(F.data == "wrong_answer")
@@ -137,7 +135,7 @@ async def wrong_answer(callback: types.CallbackQuery):
     )
 
     item = callback.from_user.id, callback.message.text, callback.message.reply_markup.inline_keyboard[0][0].text
-
+    # Записываем ответ
     await add_item(item)
     
     # Получение текущего вопроса для данного пользователя
@@ -167,10 +165,7 @@ async def wrong_answer(callback: types.CallbackQuery):
 
         # Уведомление об окончании квиза
         await callback.message.answer(f"Это был последний вопрос. Квиз завершен!\nНеверных ответов: {stat[-1][2]}\nВерных ответов: {stat[-1][3]}")
-        # res_answere = await consumer(answers)
-        # # await callback.message.answer(f"Вопрос: {res_answere[1]}\nВаш ответ: {res_answere[2]}")
-        # await callback.message.answer(f"{type(res_answere)}")    
-
+        # Возвращаем все ответы
         await flush_buffer(callback.message)
 
 # Запуск процесса поллинга новых апдейтов
