@@ -6,7 +6,7 @@ from aiogram.filters.command import Command
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 from environs import Env
 
-from for_SQL import create_table, update_quiz_index, get_quiz_index, start_stats, set_stats, get_stats_index, get_stats
+from for_SQL import create_table, update_quiz_index, get_quiz_index, start_stats, set_stats, get_stats_index, get_stats, dell_stats
 from for_keyboard import generate_options_keyboard
 from for_quiz import *
 from for_queue import *
@@ -45,7 +45,7 @@ async def get_last_stats(message: types.Message):
     # Получаем результат из таблицы результатов
     stat = await get_stats(id_quiz)
     for quiz in stat:
-        await message.answer(f"Игроком под номером {quiz[1]} всего сыграно {quiz[0]} игр\n Сумма неверных ответов: {quiz[2]}\n Сумма верных ответов: {quiz[3]}")
+        await message.answer(f"Игроком под номером {quiz[1]} всего сыграно игр: {quiz[0]}\nЛучший результат:\n{quiz[3]} верных ответов\n{quiz[2]} неверных ответов")
 
 # Хэндлер на команды /quiz
 @dp.message(F.text=="Начать игру")
@@ -60,7 +60,7 @@ async def cmd_quiz(message: types.Message):
 async def new_quiz(message):
     # получаем id пользователя, отправившего сообщение
     user_id = message.from_user.id
-
+    await dell_stats()
     # Создаём новую запись в таблице результатов
     await start_stats(user_id)
     # сбрасываем значение текущего индекса вопроса квиза в 0
@@ -167,6 +167,7 @@ async def wrong_answer(callback: types.CallbackQuery):
         await callback.message.answer(f"Это был последний вопрос. Квиз завершен!\nНеверных ответов: {stat[-1][2]}\nВерных ответов: {stat[-1][3]}")
         # Возвращаем все ответы
         await flush_buffer(callback.message)
+
 
 # Запуск процесса поллинга новых апдейтов
 async def main():

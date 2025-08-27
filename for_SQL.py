@@ -73,9 +73,16 @@ async def get_stats(id_quiz):
      # Подключаемся к базе данных
      async with aiosqlite.connect('stats.db') as db:
         # Получаем запись для заданного квиза
-        async with db.execute('''SELECT COUNT(*), user_id, SUM(wrong_count), SUM(right_count) FROM stats GROUP BY user_id''') as cursor:
+        async with db.execute('''SELECT COUNT(*), user_id, MIN(wrong_count), MAX(right_count) FROM stats GROUP BY user_id''') as cursor:
         # Возвращаем результат квиза
             results = await cursor.fetchall()
             if results is not None:
                 return results
 
+async def dell_stats():
+     # Подключаемся к базе данных
+     async with aiosqlite.connect('stats.db') as db:
+        # Очищаем таблицу
+        await db.execute('''DELETE FROM stats''')
+        # Сохраняем изменения
+        await db.commit()

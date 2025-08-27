@@ -44,5 +44,10 @@ quiz_data = [
         'question': 'Какая библиотека используется для работы с многомерными массивами в Python?',
         'options': ['Pandas', 'Matplotlib', 'NumPy', 'SciPy'],
         'correct_option': 2
+    },
+    {
+        'question': 'Какая планета в Солнечной системе самая большая по площади?',
+        'options': ['Земля', 'Марс', 'Венера', 'Юпитер'],
+        'correct_option': 3
     }
 ]
